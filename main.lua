@@ -12,7 +12,6 @@ function love.update(dt)
 	w, h, flags = love.window.getMode()
 	if game.playing and game.spawnsLeft > 0 and love.math.random(1, 100) == 1 then
 		spawnPotato(w, h)
-		game.spawnsLeft = game.spawnsLeft - 1
 	end
 	if love.keyboard.isDown("x") then
 		beginRound()
@@ -57,6 +56,7 @@ function spawnPotato(w, h)
 	}
 	table.insert(potatoes, potato)
 	spawned = spawned + 1
+	game.spawnsLeft = game.spawnsLeft - 1
 end
 
 -- width, height, padding (so we can make potatoes spawn outside the screen)
