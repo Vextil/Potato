@@ -2,50 +2,80 @@ debug = true
 dt = 0
 
 potatoes = { amount = 0, items = {} }
-buttons = {}
+buttons = { amount = 0, items = {} }
 
 state = { main = 0, playing = 1, typing = 2, success = 3, fail = 4 }
-game = { state = 1, round = 0, spawns = 0, spawnsLeft = 0 }
+game = { state = 0, round = 0, spawns = 0, spawnsLeft = 0 }
 
 function love.load()
 	love.graphics.setNewFont("assets/fonts/K26CasualComics.ttf", 15)
 	potatoImg = love.graphics.newImage("assets/images/potato.png")
+	buttonImg = love.graphics.newImage("assets/images/button.jpg")
+	setStateMain()
 end
 
 function love.update(deltaTime)
 	dt = deltaTime
 	potatoUpdate()
-	buttonUpdate()
-	if love.keyboard.isDown("x") then
-		beginRound()
-	end
 end
 
 function love.draw()
-	if     state.playing == game.state then drawPotatoes()
-	elseif state.typing  == game.state then drawTypingScreen()
-	elseif state.success == game.state then drawSuccessScreen()
-	elseif state.fail    == game.state then drawFailScreen()
-	else drawMainMenu() end
+	drawPotatoes()
+	drawButtons()
 
 	love.graphics.print("FPS "..love.timer.getFPS(), 10, 10)
 	love.graphics.print("POTATOES "..potatoes.amount, 10, 30)
 end
 
-function drawMainMenu() end
+-------- STATES --------
 
-function drawTypingScreen() end
+function setStateMain()
+	game.state = state.main 
+	addButton(buttonImg, {x = 100, y = 100}, 0)
+end
 
-function drawSuccessScreen() end
+function setStatePlaying()
+	game.state = state.playing
+end
 
-function drawFailScreen() end
+function setStateTyping()
+	game.state = state.typing
+end
+
+function setStateSuccess()
+	game.state = state.success
+end
+
+function setStateFail()
+	game.state = state.fail
+end
+
+-------- BUTTONS --------
+
+function drawButtons()
+	for i , button in ipairs(buttons.items) do
+		draw(button.i, button.l, button.r)
+	end
+end
+
+function addButton(i, x, y) 
+	button = { i = i, l = l, r = 0 }
+	table.insert(buttons.items, button)
+	buttons.amount = buttons.amount + 1
+end
+
+function removeAllButtons() 
+	for i = 1, buttons.amount, 1 do buttons.items[i] = nil end
+end
+
+-------- POTATOES --------
 
 function drawPotatoes()
-	for i, potato in ipairs(potatoes.items) do
+	for i , potato in ipairs(potatoes.items) do
 		if isEqualLocation(potato.l, potato.d, 2) then
-			despawnPotato(i)
+			removePotato(i)
 		else
-			draw(potato.i, potato.l.x, potato.l.y, potato.r)
+			draw(potato.i, potato.l, potato.r)
 			potato.l = lerpLocation(potato.l, potato.d, dt*0.1)
 			potato.r = potato.r + (potato.rs * dt)
 		end
@@ -58,21 +88,14 @@ function beginRound()
 	game.spawnsLeft = game.spawns
 end
 
-function addButton() end
-
-function removeAllButtons() end
-
-function buttonUpdate() end
-
 function potatoUpdate()
-	w, h, flags = love.window.getMode()
-	if game.playing and game.spawnsLeft > 0 and love.math.random(1, 1000) == 1 then
-		spawnPotato(w, h)
+	if game.playing and game.spawnsLeft > 0 and love.math.random(1, 100) == 1 then
+		addPotato()
 	end
 end
 
-
-function spawnPotato(w, h) -- requires window width and height
+function addPotato()
+	w, h, flags = love.window.getMode()
 	locations = getSpawnAndDestination(w, h, 400)
 	-- Potato has LOCATION, DESTINATION, ROTATION, ROTATION SPEED and IMAGE
 	potato = { l = locations.spawn, d = locations.destination, r = 0, rs = love.math.random(1, 10), i = potatoImg }
@@ -81,7 +104,7 @@ function spawnPotato(w, h) -- requires window width and height
 	game.spawnsLeft = game.spawnsLeft - 1
 end
 
-function despawnPotato(i)
+function removePotato(i)
 	table.remove(potatoes.items, i)
 	potatoes.amount = potatoes.amount - 1
 end
@@ -116,6 +139,6 @@ function isEqualLocation(a, b, t)
 	return math.abs(a.x - b.x) <= t and math.abs(a.y - b.y) <= t 
 end
 
-function draw(i, x, y, r)
-	love.graphics.draw(i, x, y, r, .5, .5, i:getWidth()/2, i:getHeight()/2)
+function draw(i, l, r)
+	love.graphics.draw(i, l.x, l.y, r, .5, .5, i:getWidth()/2, i:getHeight()/2)
 end
