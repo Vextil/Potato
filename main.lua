@@ -93,28 +93,24 @@ function getSpawnAndDestination(w, h, p)
 	side = love.math.random(1, 4)
 	spawnFactor = love.math.random()
 	destinationFactor = love.math.random()
+	x = ((w - p) * spawnFactor)
+	y = ((h - p) * spawnFactor)
+	dx = ((w - p) * destinationFactor)
+	dy = ((h - p) * destinationFactor)
 	if side == 1 then
-		x = -(p/2)
-		y = ((h - p) * spawnFactor) + p/2
-		dx = w + (p/2)
-		dy = ((h - p) * destinationFactor) + p/2
+		x = -p
+		dx = w
 	elseif side == 2 then
-		x = ((w - p) * spawnFactor) + p/2
-		y = h + (p/2)
-		dx = ((w - p) * destinationFactor) + p/2
-		dy = -(p/2)
+		y = h
+		dy = -p
 	elseif side == 3 then
-		x = w + (p/2)
-		y = ((h - p) * spawnFactor) + p/2
-		dx = -(p/2)
-		dy = ((h - p) * destinationFactor) + p/2
+		x = w 
+		dx = -p
 	else
-		x = ((w - p) * spawnFactor) + p/2
-		y = -(p/2)
-		dx = ((w - p) * destinationFactor) + p/2
-		dy = h + (p/2)
+		y = -p
+		dy = h
 	end
-	return {spawn = {x = x, y = y}, destination = {x = dx, y = dy}}
+	return {spawn = {x = x+p/2, y = y+p/2}, destination = {x = dx+p/2, y = dy+p/2}}
 end
 
 function lerpLocation(a, b, t) 
