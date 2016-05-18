@@ -86,7 +86,7 @@ function despawnPotato(i)
 	potatoes.amount = potatoes.amount - 1
 end
 
--- This algorithm generates a  random point in a rectangle's perimeter and 
+-- This algorithm generates a random point in a rectangle's perimeter and 
 -- another random point in the opposing side (using padding to generate it outside the screen)
 -- The generation is not uniform, all sides have the same chance
 function getSpawnAndDestination(w, h, p)
