@@ -4,13 +4,13 @@ dt = 0
 potatoes = { amount = 0, items = {} }
 buttons = { amount = 0, items = {} }
 
-state = { main = 0, playing = 1, typing = 2, success = 3, fail = 4 }
+state = { main = 0, typing = 2, success = 3, fail = 4 }
 game = { state = 0, round = 0, spawns = 0, spawnsLeft = 0 }
 
 function love.load()
 	love.graphics.setNewFont("assets/fonts/K26CasualComics.ttf", 15)
 	potatoImg = love.graphics.newImage("assets/images/potato.png")
-	buttonImg = love.graphics.newImage("assets/images/button.jpg")
+	buttonImg = love.graphics.newImage("assets/images/button.png")
 	setStateMain()
 end
 
@@ -27,15 +27,23 @@ function love.draw()
 	love.graphics.print("POTATOES "..potatoes.amount, 10, 30)
 end
 
+function love.mousepressed(x, y, button, istouch)
+	buttonPressCheck(x, y)
+end
+
 -------- STATES --------
 
 function setStateMain()
 	game.state = state.main 
-	addButton(buttonImg, {x = 100, y = 100}, 0)
+	addButton(buttonImg, 100, 100, 0, function()
+		setStatePlaying()
+	end)
 end
 
 function setStatePlaying()
 	game.state = state.playing
+	game.spawns = love.math.random(1, 50)
+	game.spawnsLeft = game.spawns
 end
 
 function setStateTyping()
@@ -52,45 +60,48 @@ end
 
 -------- BUTTONS --------
 
-function drawButtons()
+function buttonPressCheck(x, y)
 	for i , button in ipairs(buttons.items) do
-		draw(button.i, button.l, button.r)
+		if clicked(button, x, y) then
+			button.f()
+		end
 	end
 end
 
-function addButton(i, x, y) 
-	button = { i = i, l = l, r = 0 }
+function drawButtons()
+	for i , button in ipairs(buttons.items) do
+		draw(button)
+	end
+end
+
+function addButton(i, x, y, r, f) 
+	button = { i = i, l = {x = x, y = y}, r = r, f = f }
 	table.insert(buttons.items, button)
 	buttons.amount = buttons.amount + 1
 end
 
 function removeAllButtons() 
 	for i = 1, buttons.amount, 1 do buttons.items[i] = nil end
+	buttons.amount = 0
 end
 
 -------- POTATOES --------
+
+function potatoUpdate()
+	if game.state == state.playing and game.spawnsLeft > 0 and love.math.random(1, 100) == 1 then
+		addPotato()
+	end
+end
 
 function drawPotatoes()
 	for i , potato in ipairs(potatoes.items) do
 		if isEqualLocation(potato.l, potato.d, 2) then
 			removePotato(i)
 		else
-			draw(potato.i, potato.l, potato.r)
+			draw(potato)
 			potato.l = lerpLocation(potato.l, potato.d, dt*0.1)
 			potato.r = potato.r + (potato.rs * dt)
 		end
-	end
-end
-
-function beginRound()
-	game.playing = true
-	game.spawns = love.math.random(1, 50)
-	game.spawnsLeft = game.spawns
-end
-
-function potatoUpdate()
-	if game.playing and game.spawnsLeft > 0 and love.math.random(1, 100) == 1 then
-		addPotato()
 	end
 end
 
@@ -130,6 +141,8 @@ function getSpawnAndDestination(w, h, p)
 	return {spawn = {x = x+p/2, y = y+p/2}, destination = {x = dx+p/2, y = dy+p/2}}
 end
 
+-------- HELPERS --------
+
 function lerpLocation(a, b, t) 
 	return { x = a.x+(b.x-a.x)*t, y = a.y+(b.y-a.y)*t } 
 end
@@ -139,6 +152,10 @@ function isEqualLocation(a, b, t)
 	return math.abs(a.x - b.x) <= t and math.abs(a.y - b.y) <= t 
 end
 
-function draw(i, l, r)
-	love.graphics.draw(i, l.x, l.y, r, .5, .5, i:getWidth()/2, i:getHeight()/2)
+function draw(e)
+	love.graphics.draw(e.i, e.l.x, e.l.y, e.r, 1, 1, e.i:getWidth()/2, e.i:getHeight()/2)
+end
+
+function clicked(e, x, y)
+	return x > e.l.x and x < e.l.x+e.i:getWidth() and y > e.l.y and y < e.l.y+e.i:getHeight()
 end
