@@ -4,14 +4,13 @@ dt = 0
 potatoes = { amount = 0, items = {} }
 buttons = { amount = 0, items = {} }
 
-state = { main = 0, typing = 2, success = 3, fail = 4 }
 game = { state = 0, round = 0, spawns = 0, spawnsLeft = 0 }
 
 function love.load()
 	love.graphics.setNewFont("assets/fonts/K26CasualComics.ttf", 15)
 	potatoImg = love.graphics.newImage("assets/images/potato.png")
 	buttonImg = love.graphics.newImage("assets/images/button.png")
-	setStateMain()
+	setState(state.main)
 end
 
 function love.update(deltaTime)
@@ -33,50 +32,58 @@ end
 
 -------- STATES --------
 
-function setStateMain()
-	game.state = state.main 
-	addButton(buttonImg, 100, 100, 0, function()
-		setStatePlaying()
-	end)
-end
+-- I know, this looks like a weird implementation but there's a reason.
+-- By changing states this way I can avoid repeating code like game.state = (current state)
+-- and removeAllButtons(), since they would have been needed in each state changing function.
 
-function setStatePlaying()
-	game.state = state.playing
-	game.spawns = love.math.random(1, 50)
-	game.spawnsLeft = game.spawns
-end
+state = { main = 1, playing = 2, typing = 3, success = 4, fail = 5 }
 
-function setStateTyping()
-	game.state = state.typing
-end
+stateFunctions = {
 
-function setStateSuccess()
-	game.state = state.success
-end
+	--[[MAIN]] function()
+		addButton(buttonImg, 300, 300, 0, function() setState(state.playing) end)
+	end, 
 
-function setStateFail()
-	game.state = state.fail
+	--[[PLAYING]] function()
+		game.spawns = love.math.random(1, 50)
+		game.spawnsLeft = game.spawns
+	end, 
+
+	--[[TYPING]] function()
+	end,
+
+	--[[SUCCESS]] function()
+	end,
+
+	--[[FAIL]] function()
+	end
+}
+
+function setState(id)
+	game.state = id
+	removeAllButtons()
+	stateFunctions[id]()
 end
 
 -------- BUTTONS --------
 
 function buttonPressCheck(x, y)
-	for i , button in ipairs(buttons.items) do
-		if clicked(button, x, y) then
-			button.f()
+	for i , b in ipairs(buttons.items) do
+		if clicked(b, x, y) then
+			b.f()
 		end
 	end
 end
 
 function drawButtons()
-	for i , button in ipairs(buttons.items) do
-		draw(button)
+	for i , b in ipairs(buttons.items) do
+		love.graphics.draw(b.i, b.l.x, b.l.y, b.r)
 	end
 end
 
 function addButton(i, x, y, r, f) 
-	button = { i = i, l = {x = x, y = y}, r = r, f = f }
-	table.insert(buttons.items, button)
+	b = { i = i, l = {x = x, y = y}, r = r, f = f }
+	table.insert(buttons.items, b)
 	buttons.amount = buttons.amount + 1
 end
 
@@ -94,13 +101,13 @@ function potatoUpdate()
 end
 
 function drawPotatoes()
-	for i , potato in ipairs(potatoes.items) do
-		if isEqualLocation(potato.l, potato.d, 2) then
+	for i , p in ipairs(potatoes.items) do
+		if isEqualLocation(p.l, p.d, 2) then
 			removePotato(i)
 		else
-			draw(potato)
-			potato.l = lerpLocation(potato.l, potato.d, dt*0.1)
-			potato.r = potato.r + (potato.rs * dt)
+			love.graphics.draw(p.i, p.l.x, p.l.y, p.r, 1, 1, p.i:getWidth()/2, p.i:getHeight()/2)
+			p.l = lerpLocation(p.l, p.d, dt*0.1)
+			p.r = p.r + (p.rs * dt)
 		end
 	end
 end
@@ -150,10 +157,6 @@ end
 -- a, b, t (Threshold, in LERP values will never reach 0 so we need to use a "margin")
 function isEqualLocation(a, b, t) 
 	return math.abs(a.x - b.x) <= t and math.abs(a.y - b.y) <= t 
-end
-
-function draw(e)
-	love.graphics.draw(e.i, e.l.x, e.l.y, e.r, 1, 1, e.i:getWidth()/2, e.i:getHeight()/2)
 end
 
 function clicked(e, x, y)
