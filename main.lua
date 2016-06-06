@@ -7,6 +7,7 @@ images = {}
 
 potatoes = { amount = 0, items = {} }
 buttons = { amount = 0, items = {} }
+text = { amount = 0, items = {} }
 
 game = { state = 0, round = 0, spawns = 0, spawnsLeft = 0, points = 0 }
 
@@ -25,6 +26,7 @@ end
 function love.draw()
 	drawPotatoes()
 	drawButtons()
+	drawText()
 
 	love.graphics.print("FPS "..love.timer.getFPS(), 10, 10)
 	love.graphics.print("POTATOES "..potatoes.amount, 10, 30)
@@ -84,30 +86,40 @@ stateFunctions = {
 function setState(id)
 	game.state = id
 	removeAllButtons()
+	removeAllText()
 	stateFunctions[id]()
 end
 
 -------- TEXT -----------
 
 function drawText()
+	for i , t in ipairs(text.items) do
+		love.graphics.print(t.i, t.x, t.i)
+		love.graphics.draw(t.i, t.x, t.y, 0)
+	end
 end
 
-function addText(t, x, y)
+function addText(i, x, y) 
+	t = { i = i, x = x, y = y }
+	table.insert(text.items, t)
+	text.amount = text.amount + 1
 end
 
-function removeAllText()
+function removeAllText() 
+	for i = 1, text.amount, 1 do text.items[i] = nil end
+	text.amount = 0
 end
 
 -------- BUTTONS --------
 
 function drawButtons()
 	for i , b in ipairs(buttons.items) do
-		love.graphics.draw(b.i, b.l.x, b.l.y, b.r)
+		love.graphics.draw(b.i, b.x, b.y, b.r)
 	end
 end
 
 function addButton(i, x, y, f) 
-	b = { i = i, l = {x = x, y = y}, f = f }
+	b = { i = i, x = x, y = y, f = f }
 	table.insert(buttons.items, b)
 	buttons.amount = buttons.amount + 1
 end
@@ -138,8 +150,8 @@ function drawPotatoes()
 		if isEqualLocation(p.l, p.d, 2) then
 			removePotato(i)
 		else
-			love.graphics.draw(p.i, p.l.x, p.l.y, p.r, 1, 1, p.i:getWidth()/2, p.i:getHeight()/2)
-			p.l = lerpLocation(p.l, p.d, dt*0.1)
+			love.graphics.draw(p.i, p.x, p.y, p.r, 1, 1, p.i:getWidth()/2, p.i:getHeight()/2)
+			p.l = lerpLocation(p.x, p.y, p.dx, p.dy, dt*0.1)
 			p.r = p.r + (p.rs * dt)
 		end
 	end
@@ -148,8 +160,15 @@ end
 function addPotato()
 	w, h, flags = love.window.getMode()
 	locations = getSpawnAndDestination(w, h, 400)
-	-- Potato has LOCATION, DESTINATION, ROTATION, ROTATION SPEED and IMAGE
-	potato = { l = locations.spawn, d = locations.destination, r = 0, rs = love.math.random(1, 10), i = images.potato }
+	potato = { 
+		x = locations.spawn.x,
+		y = locations.spawn.y,
+		dx = locations.destination.x,
+		dy = locations.destination.y, 
+		r = 0, 
+		rs = love.math.random(1, 10), 
+		i = images.potato
+	}
 	table.insert(potatoes.items, potato)
 	potatoes.amount = potatoes.amount + 1
 	game.spawnsLeft = game.spawnsLeft - 1
@@ -183,15 +202,15 @@ end
 
 -------- HELPERS --------
 
-function lerpLocation(a, b, t) 
-	return { x = a.x+(b.x-a.x)*t, y = a.y+(b.y-a.y)*t } 
+function lerpLocation(ax, ay, bx, by, t) 
+	return { x = ax+(bx-ax)*t, y = ay+(by-ay)*t } 
 end
 
 -- a, b, t (Threshold, in LERP values will never reach 0 so we need to use a "margin")
-function isEqualLocation(a, b, t) 
-	return math.abs(a.x - b.x) <= t and math.abs(a.y - b.y) <= t 
+function isEqualLocation(ax, ay, bx, by, t) 
+	return math.abs(ax - bx) <= t and math.abs(ay - by) <= t 
 end
 
 function clicked(e, x, y)
-	return x > e.l.x and x < e.l.x+e.i:getWidth() and y > e.l.y and y < e.l.y+e.i:getHeight()
+	return x > e.x and x < e.x+e.i:getWidth() and y > e.y and y < e.y+e.i:getHeight()
 end
